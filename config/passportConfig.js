@@ -1,44 +1,38 @@
-// config/passportConfig.js
-
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
-import pool from '../db/pool.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Serialize user into the session
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  done(null, user.username);
 });
 
 // Deserialize user from the session
-passport.deserializeUser((id, done) => {
-  pool.query('SELECT id, username FROM users WHERE id = $1', [id], (err, result) => {
-    if (err) {
-      return done(err);
-    }
-    done(null, result.rows[0]);
-  });
+passport.deserializeUser((username, done) => {
+  const user = { username }; // Since we have only one user, we can just return the username
+  done(null, user);
 });
 
 // Configure local strategy for passport
 passport.use(new LocalStrategy((username, password, done) => {
-  pool.query('SELECT id, username, password FROM users WHERE username = $1', [username], (err, result) => {
-    if (err) {
-      return done(err);
-    }
-    if (result.rows.length === 0) {
-      return done(null, false, { message: 'Incorrect username.' });
-    }
+  const hardcodedUsername = process.env.ADMIN_USERNAME;
+  const storedHashedPassword = process.env.ADMIN_PASSWORD;
 
-    const user = result.rows[0];
+  if (username !== hardcodedUsername) {
+    return done(null, false, { message: 'Incorrect username.' });
+  }
 
-    bcrypt.compare(password, user.password, (err, res) => {
-      if (res) {
-        return done(null, user);
-      } else {
-        return done(null, false, { message: 'Incorrect password.' });
-      }
-    });
+  bcrypt.compare(password, storedHashedPassword, (err, res) => {
+    if (err) return done(err);
+    if (res) {
+      const user = { username }; // Use the hardcoded username as the user object
+      return done(null, user);
+    } else {
+      return done(null, false, { message: 'Incorrect password.' });
+    }
   });
 }));
 
