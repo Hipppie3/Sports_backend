@@ -2,8 +2,11 @@ import express from 'express';
 import session from 'express-session';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import passport from './config/passportConfig.js';
 import authRoutes from './routes/auth.js';
+import playerRouter from './routes/player.js';
 
 dotenv.config();
 
@@ -42,8 +45,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Workaround for __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the "uploads" directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Define routes
 app.use('/api/auth', authRoutes);
+app.use('/api', playerRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
