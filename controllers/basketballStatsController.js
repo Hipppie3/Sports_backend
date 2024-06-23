@@ -15,9 +15,8 @@ const basketballStatsController = {
 
   createStats: async (req, res) => {
     try {
-      const { player_id, game_date, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
+      const { player_id, game_id, game_date, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
 
-      // Calculate derived stats
       const reb = oreb + dreb;
       const fg_percentage = ((two_pm + three_pm) / (two_pa + three_pa)) * 100 || 0;
       const two_p_percentage = (two_pm / two_pa) * 100 || 0;
@@ -28,9 +27,9 @@ const basketballStatsController = {
       const pts = ftm + (3 * three_pm) + (2 * two_pm);
 
       const query = `
-        INSERT INTO basketball_stats (player_id, game_date, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov)
+        INSERT INTO basketball_stats (player_id, game_id, game_date, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`;
-      const values = [player_id, game_date, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov];
+      const values = [player_id, game_id, game_date, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov];
       const result = await pool.query(query, values);
       res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -42,9 +41,8 @@ const basketballStatsController = {
   updateStats: async (req, res) => {
     try {
       const { id } = req.params;
-      const { two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
+      const { game_id, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
 
-      // Calculate derived stats
       const reb = oreb + dreb;
       const fg_percentage = ((two_pm + three_pm) / (two_pa + three_pa)) * 100 || 0;
       const two_p_percentage = (two_pm / two_pa) * 100 || 0;
@@ -57,11 +55,11 @@ const basketballStatsController = {
       const query = `
         UPDATE basketball_stats 
         SET 
-          two_pm = $1, two_pa = $2, three_pm = $3, three_pa = $4, ftm = $5, fta = $6, oreb = $7, dreb = $8, ast = $9, stl = $10, blk = $11, tov = $12,
-          reb = $13, fg_percentage = $14, two_p_percentage = $15, three_p_percentage = $16, ft_percentage = $17, fgm = $18, fga = $19, pts = $20,
+          game_id = $1, two_pm = $2, two_pa = $3, three_pm = $4, three_pa = $5, ftm = $6, fta = $7, oreb = $8, dreb = $9, ast = $10, stl = $11, blk = $12, tov = $13,
+          reb = $14, fg_percentage = $15, two_p_percentage = $16, three_p_percentage = $17, ft_percentage = $18, fgm = $19, fga = $20, pts = $21,
           updated_at = CURRENT_TIMESTAMP 
-        WHERE id = $21 RETURNING *`;
-      const values = [two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov, reb, fg_percentage, two_p_percentage, three_p_percentage, ft_percentage, fgm, fga, pts, id];
+        WHERE id = $22 RETURNING *`;
+      const values = [game_id, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov, reb, fg_percentage, two_p_percentage, three_p_percentage, ft_percentage, fgm, fga, pts, id];
       const result = await pool.query(query, values);
       res.json(result.rows[0]);
     } catch (error) {

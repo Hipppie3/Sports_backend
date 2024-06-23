@@ -9,7 +9,8 @@ import authRoutes from './routes/auth.js';
 import playerRouter from './routes/player.js';
 import basketballStatsRouter from './routes/basketballStats.js';
 import videoHighlightsRouter from './routes/videoHighlights.js';
-import teamRouter from './routes/team.js'; // Import teamRouter
+import gameRouter from './routes/game.js';  // Import the game routes
+import teamRouter from './routes/team.js'; // Import the team routes
 
 dotenv.config();
 
@@ -60,7 +61,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api', playerRouter);
 app.use('/api', basketballStatsRouter);
 app.use('/video-highlights', videoHighlightsRouter);
-app.use('/api', teamRouter); // Use teamRouter
+app.use('/api', gameRouter);  // Add the game routes
+app.use('/api', teamRouter); // Add the team routes
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

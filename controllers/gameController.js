@@ -3,9 +3,9 @@ import pool from '../db/pool.js';
 const gameController = {
   createGame: async (req, res) => {
     try {
-      const { game_date, game_time, home_team_id, away_team_id, location, video_url } = req.body;
-      const query = 'INSERT INTO games (game_date, game_time, home_team_id, away_team_id, location, video_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
-      const result = await pool.query(query, [game_date, game_time, home_team_id, away_team_id, location, video_url]);
+      const { game_date, game_time, home_team_id, away_team_id, location, video_url, home_team_points, away_team_points } = req.body;
+      const query = 'INSERT INTO games (game_date, game_time, home_team_id, away_team_id, location, video_url, home_team_points, away_team_points) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+      const result = await pool.query(query, [game_date, game_time, home_team_id, away_team_id, location, video_url, home_team_points, away_team_points]);
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating game:', error);
@@ -15,7 +15,15 @@ const gameController = {
 
   getAllGames: async (req, res) => {
     try {
-      const query = 'SELECT * FROM games';
+      const query = `
+        SELECT 
+          g.*, 
+          ht.name as home_team_name, 
+          at.name as away_team_name
+        FROM games g
+        JOIN teams ht ON g.home_team_id = ht.id
+        JOIN teams at ON g.away_team_id = at.id
+      `;
       const result = await pool.query(query);
       res.json(result.rows);
     } catch (error) {
@@ -27,7 +35,16 @@ const gameController = {
   getGameById: async (req, res) => {
     try {
       const { id } = req.params;
-      const query = 'SELECT * FROM games WHERE id = $1';
+      const query = `
+        SELECT 
+          g.*, 
+          ht.name as home_team_name, 
+          at.name as away_team_name
+        FROM games g
+        JOIN teams ht ON g.home_team_id = ht.id
+        JOIN teams at ON g.away_team_id = at.id
+        WHERE g.id = $1
+      `;
       const result = await pool.query(query, [id]);
       if (result.rows.length === 0) {
         return res.status(404).json({ message: 'Game not found' });
