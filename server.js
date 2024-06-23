@@ -8,6 +8,7 @@ import passport from './config/passportConfig.js';
 import authRoutes from './routes/auth.js';
 import playerRouter from './routes/player.js';
 import basketballStatsRouter from './routes/basketballStats.js';
+import videoHighlightsRouter from './routes/videoHighlights.js';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api', playerRouter);
 app.use('/api', basketballStatsRouter);
+app.use('/video-highlights', videoHighlightsRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

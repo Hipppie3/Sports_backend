@@ -31,12 +31,19 @@ const playerController = {
   getPlayerById: async (req, res) => {
     try {
       const { id } = req.params;
-      const query = 'SELECT id, first_name, last_name, position, sport, encode(image, \'base64\') as image FROM players WHERE id = $1';
-      const result = await pool.query(query, [id]);
-      if (result.rows.length === 0) {
+      const playerQuery = 'SELECT id, first_name, last_name, position, sport, encode(image, \'base64\') as image FROM players WHERE id = $1';
+      const playerResult = await pool.query(playerQuery, [id]);
+      if (playerResult.rows.length === 0) {
         return res.status(404).json({ message: 'Player not found' });
       }
-      res.json(result.rows[0]);
+      
+      const videoQuery = 'SELECT * FROM video_highlights WHERE player_id = $1';
+      const videoResult = await pool.query(videoQuery, [id]);
+
+      const player = playerResult.rows[0];
+      player.video_highlights = videoResult.rows;
+
+      res.json(player);
     } catch (error) {
       console.error('Error fetching player:', error);
       res.status(500).json({ message: 'Internal Server Error' });
