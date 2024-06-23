@@ -1,15 +1,13 @@
-// controllers/playerController.js
-
 import pool from '../db/pool.js';
 
 const playerController = {
   createPlayer: async (req, res) => {
     try {
-      const { first_name, last_name, position, sport } = req.body;
+      const { first_name, last_name, position, sport, team_id } = req.body;
       const image = req.file ? req.file.buffer : null;
 
-      const query = 'INSERT INTO players (first_name, last_name, position, sport, image) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-      const result = await pool.query(query, [first_name, last_name, position, sport, image]);
+      const query = 'INSERT INTO players (first_name, last_name, position, sport, image, team_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
+      const result = await pool.query(query, [first_name, last_name, position, sport, image, team_id]);
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating player:', error);
@@ -19,7 +17,11 @@ const playerController = {
 
   getAllPlayers: async (req, res) => {
     try {
-      const query = 'SELECT id, first_name, last_name, position, sport, encode(image, \'base64\') as image FROM players';
+      const query = `
+        SELECT p.id, p.first_name, p.last_name, p.position, p.sport, encode(p.image, 'base64') as image, t.name as team_name
+        FROM players p
+        LEFT JOIN teams t ON p.team_id = t.id
+      `;
       const result = await pool.query(query);
       res.json(result.rows);
     } catch (error) {
@@ -31,7 +33,12 @@ const playerController = {
   getPlayerById: async (req, res) => {
     try {
       const { id } = req.params;
-      const playerQuery = 'SELECT id, first_name, last_name, position, sport, encode(image, \'base64\') as image FROM players WHERE id = $1';
+      const playerQuery = `
+        SELECT p.id, p.first_name, p.last_name, p.position, p.sport, encode(p.image, 'base64') as image, t.name as team_name
+        FROM players p
+        LEFT JOIN teams t ON p.team_id = t.id
+        WHERE p.id = $1
+      `;
       const playerResult = await pool.query(playerQuery, [id]);
       if (playerResult.rows.length === 0) {
         return res.status(404).json({ message: 'Player not found' });
@@ -53,7 +60,7 @@ const playerController = {
   updatePlayer: async (req, res) => {
     try {
       const { id } = req.params;
-      const { first_name, last_name, position, sport } = req.body;
+      const { first_name, last_name, position, sport, team_id } = req.body;
       const image = req.file ? req.file.buffer : null;
 
       const checkQuery = 'SELECT id FROM players WHERE id = $1';
@@ -69,10 +76,11 @@ const playerController = {
           last_name = COALESCE($2, last_name), 
           position = COALESCE($3, position), 
           sport = COALESCE($4, sport), 
-          image = COALESCE($5, image) 
-        WHERE id = $6 
+          image = COALESCE($5, image),
+          team_id = COALESCE($6, team_id)
+        WHERE id = $7 
         RETURNING *`;
-      const result = await pool.query(query, [first_name, last_name, position, sport, image, id]);
+      const result = await pool.query(query, [first_name, last_name, position, sport, image, team_id, id]);
       res.json(result.rows[0]);
     } catch (error) {
       console.error('Error updating player:', error);
