@@ -4,7 +4,12 @@ const basketballStatsController = {
   getStatsByPlayerId: async (req, res) => {
     try {
       const { player_id } = req.params;
-      const query = 'SELECT * FROM basketball_stats WHERE player_id = $1';
+      const query = `
+        SELECT bs.*, g.game_date
+        FROM basketball_stats bs
+        JOIN games g ON bs.game_id = g.id
+        WHERE bs.player_id = $1
+      `;
       const result = await pool.query(query, [player_id]);
       res.json(result.rows);
     } catch (error) {
@@ -15,7 +20,7 @@ const basketballStatsController = {
 
   createStats: async (req, res) => {
     try {
-      const { player_id, game_id, game_date, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
+      const { player_id, game_id, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
 
       const reb = oreb + dreb;
       const fg_percentage = ((two_pm + three_pm) / (two_pa + three_pa)) * 100 || 0;
@@ -27,9 +32,9 @@ const basketballStatsController = {
       const pts = ftm + (3 * three_pm) + (2 * two_pm);
 
       const query = `
-        INSERT INTO basketball_stats (player_id, game_id, game_date, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov)
+        INSERT INTO basketball_stats (player_id, game_id, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`;
-      const values = [player_id, game_id, game_date, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov];
+      const values = [player_id, game_id, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov];
       const result = await pool.query(query, values);
       res.status(201).json(result.rows[0]);
     } catch (error) {
