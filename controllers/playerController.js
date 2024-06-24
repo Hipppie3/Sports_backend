@@ -87,6 +87,23 @@ const playerController = {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   },
+  
+    getPlayersByTeamId: async (req, res) => {
+    try {
+      const { team_id } = req.params;
+      const query = `
+        SELECT p.id, p.first_name, p.last_name, p.position, p.sport, encode(p.image, 'base64') as image, t.name as team_name
+        FROM players p
+        LEFT JOIN teams t ON p.team_id = t.id
+        WHERE p.team_id = $1
+      `;
+      const result = await pool.query(query, [team_id]);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching players by team ID:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  },
 
   deletePlayer: async (req, res) => {
     try {

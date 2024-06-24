@@ -17,6 +17,24 @@ const basketballStatsController = {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   },
+  
+getStatsByGameId: async (req, res) => {
+  try {
+    const { game_id } = req.params;
+    const query = `
+      SELECT bs.*, p.first_name || ' ' || p.last_name AS player_name, p.team_id
+      FROM basketball_stats bs
+      JOIN players p ON bs.player_id = p.id
+      WHERE bs.game_id = $1
+    `;
+    const result = await pool.query(query, [game_id]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+},
+
 
   createStats: async (req, res) => {
     try {
@@ -88,5 +106,7 @@ const basketballStatsController = {
     }
   }
 };
+
+
 
 export default basketballStatsController;
