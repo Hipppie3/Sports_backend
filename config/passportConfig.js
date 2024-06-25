@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
-import pool from './db/pool.js';
+import pool from '../db/pool.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
