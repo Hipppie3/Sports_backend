@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import pgSession from 'connect-pg-simple';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -11,11 +12,14 @@ import basketballStatsRouter from './routes/basketballStats.js';
 import videoHighlightsRouter from './routes/videoHighlights.js';
 import gameRouter from './routes/game.js';  // Import the game routes
 import teamRouter from './routes/team.js'; // Import the team routes
+import pool from './db/pool.js'; // Ensure the path is correct
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const PgSession = pgSession(session);
 
 // Enable CORS with specific origin and credentials
 app.use(cors({
@@ -27,8 +31,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize session
+// Initialize session with PostgreSQL store
 app.use(session({
+  store: new PgSession({
+    pool: pool, // Connection pool
+    tableName: 'session' // Use another table-name than the default "session" one if you want
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
