@@ -19,7 +19,7 @@ const port = process.env.PORT || 3000;
 
 // Enable CORS with specific origin and credentials
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://hipppiesports.netlify.app',
   credentials: true,
 }));
 
@@ -63,6 +63,11 @@ app.use('/api', basketballStatsRouter);
 app.use('/video-highlights', videoHighlightsRouter);
 app.use('/api', gameRouter);  // Add the game routes
 app.use('/api', teamRouter); // Add the team routes
+
+// Default route to handle root URL
+app.get('/', (req, res) => {
+  res.send('Welcome to the Basketball Backend API!');
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
