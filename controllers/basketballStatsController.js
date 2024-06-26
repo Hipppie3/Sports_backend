@@ -2,6 +2,7 @@ import pool from '../db/pool.js';
 
 const basketballStatsController = {
   getStatsByPlayerId: async (req, res) => {
+    const client = await pool.connect();
     try {
       const { player_id } = req.params;
       const query = `
@@ -10,33 +11,38 @@ const basketballStatsController = {
         JOIN games g ON bs.game_id = g.id
         WHERE bs.player_id = $1
       `;
-      const result = await pool.query(query, [player_id]);
+      const result = await client.query(query, [player_id]);
       res.json(result.rows);
     } catch (error) {
       console.error('Error fetching stats:', error);
       res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      client.release();
     }
   },
-  
-getStatsByGameId: async (req, res) => {
-  try {
-    const { game_id } = req.params;
-    const query = `
-      SELECT bs.*, p.first_name || ' ' || p.last_name AS player_name, p.team_id
-      FROM basketball_stats bs
-      JOIN players p ON bs.player_id = p.id
-      WHERE bs.game_id = $1
-    `;
-    const result = await pool.query(query, [game_id]);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-},
 
+  getStatsByGameId: async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { game_id } = req.params;
+      const query = `
+        SELECT bs.*, p.first_name || ' ' || p.last_name AS player_name, p.team_id
+        FROM basketball_stats bs
+        JOIN players p ON bs.player_id = p.id
+        WHERE bs.game_id = $1
+      `;
+      const result = await client.query(query, [game_id]);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      client.release();
+    }
+  },
 
   createStats: async (req, res) => {
+    const client = await pool.connect();
     try {
       const { player_id, game_id, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
 
@@ -53,15 +59,18 @@ getStatsByGameId: async (req, res) => {
         INSERT INTO basketball_stats (player_id, game_id, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`;
       const values = [player_id, game_id, pts, fgm, fga, fg_percentage, two_pm, two_pa, two_p_percentage, three_pm, three_pa, three_p_percentage, ftm, fta, ft_percentage, oreb, dreb, reb, ast, stl, blk, tov];
-      const result = await pool.query(query, values);
+      const result = await client.query(query, values);
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Error creating stats:', error);
       res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      client.release();
     }
   },
 
   updateStats: async (req, res) => {
+    const client = await pool.connect();
     try {
       const { id } = req.params;
       const { game_id, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov } = req.body;
@@ -83,19 +92,22 @@ getStatsByGameId: async (req, res) => {
           updated_at = CURRENT_TIMESTAMP 
         WHERE id = $22 RETURNING *`;
       const values = [game_id, two_pm, two_pa, three_pm, three_pa, ftm, fta, oreb, dreb, ast, stl, blk, tov, reb, fg_percentage, two_p_percentage, three_p_percentage, ft_percentage, fgm, fga, pts, id];
-      const result = await pool.query(query, values);
+      const result = await client.query(query, values);
       res.json(result.rows[0]);
     } catch (error) {
       console.error('Error updating stats:', error);
       res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      client.release();
     }
   },
 
   deleteStats: async (req, res) => {
+    const client = await pool.connect();
     try {
       const { id } = req.params;
       const query = 'DELETE FROM basketball_stats WHERE id = $1 RETURNING *';
-      const result = await pool.query(query, [id]);
+      const result = await client.query(query, [id]);
       if (result.rows.length === 0) {
         return res.status(404).json({ message: 'Stats not found' });
       }
@@ -103,10 +115,10 @@ getStatsByGameId: async (req, res) => {
     } catch (error) {
       console.error('Error deleting stats:', error);
       res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      client.release();
     }
   }
 };
-
-
 
 export default basketballStatsController;
