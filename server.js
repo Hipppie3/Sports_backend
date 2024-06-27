@@ -23,7 +23,7 @@ const PgSession = pgSession(session);
 
 // Enable CORS with specific origin and credentials
 app.use(cors({
-  origin: 'https://hipppiesports.netlify.app',
+  origin: ['https://hipppiesports.netlify.app', 'http://localhost:5173'],
   credentials: true,
 }));
 
