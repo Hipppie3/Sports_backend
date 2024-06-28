@@ -64,13 +64,13 @@ const __dirname = path.dirname(__filename);
 // Serve static files from the "uploads" directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Define routes
+// Define routes with /api prefix
 app.use('/api/auth', authRoutes);
-app.use('/api', playerRouter);
-app.use('/api', basketballStatsRouter);
-app.use('/video-highlights', videoHighlightsRouter);
-app.use('/api', gameRouter);  // Add the game routes
-app.use('/api', teamRouter); // Add the team routes
+app.use('/api/players', playerRouter);
+app.use('/api/basketball-stats', basketballStatsRouter);
+app.use('/api/video-highlights', videoHighlightsRouter);
+app.use('/api/games', gameRouter);  // Add the game routes
+app.use('/api/teams', teamRouter); // Add the team routes
 
 // Default route to handle root URL
 app.get('/', (req, res) => {
