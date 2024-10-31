@@ -10,9 +10,11 @@ import authRoutes from './routes/auth.js';
 import playerRouter from './routes/player.js';
 import basketballStatsRouter from './routes/basketballStats.js';
 import videoHighlightsRouter from './routes/videoHighlights.js';
-import gameRouter from './routes/game.js';  // Import the game routes
-import teamRouter from './routes/team.js'; // Import the team routes
-import pool from './db/pool.js'; // Ensure the path is correct
+import gameRouter from './routes/game.js';
+import teamRouter from './routes/team.js';
+import leagueRouter from './routes/league.js';  // Import the league routes
+import scheduleRouter from './routes/schedule.js';  // Import the schedule routes
+import pool from './db/pool.js';  // Ensure the path is correct
 
 dotenv.config();
 
@@ -34,28 +36,22 @@ app.use(express.urlencoded({ extended: true }));
 // Initialize session with PostgreSQL store
 app.use(session({
   store: new PgSession({
-    pool: pool, // Connection pool
-    tableName: 'sessions' // Use the correct table name
+    pool: pool,  // Connection pool
+    tableName: 'sessions',  // Use the correct table name
   }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: false,  // Set to true in production with HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,  // 24 hours
   },
 }));
 
-// Initialize passport
+// Initialize passport for authentication
 app.use(passport.initialize());
 app.use(passport.session());
-
-// Log session information for debugging
-app.use((req, res, next) => {
-  console.log('Session:', req.session);
-  next();
-});
 
 // Workaround for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -64,19 +60,37 @@ const __dirname = path.dirname(__filename);
 // Serve static files from the "uploads" directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Define routes
+// Log session information for debugging
+app.use((req, res, next) => {
+  console.log('Session:', req.session);
+  next();
+});
+
+// Define API routes
 app.use('/api/auth', authRoutes);
 app.use('/api', playerRouter);
 app.use('/api', basketballStatsRouter);
-app.use('/api/video-highlights', videoHighlightsRouter);
-app.use('/api', gameRouter);  // Add the game routes
-app.use('/api', teamRouter); // Add the team routes
+app.use('/api', videoHighlightsRouter);
+app.use('/api', gameRouter);
+app.use('/api', teamRouter);
+app.use('/api', leagueRouter);  // Add league routes
+app.use('/api', scheduleRouter);  // Add schedule routes
+
+// Check connected database
+pool.query('SELECT current_database()', (err, res) => {
+  if (err) {
+    console.error('Error executing query:', err.stack);
+  } else {
+    console.log('Connected to database:', res.rows[0].current_database);
+  }
+});
 
 // Default route to handle root URL
 app.get('/', (req, res) => {
   res.send('Welcome to the Basketball Backend API!');
 });
 
+// Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

@@ -1,6 +1,7 @@
 import pool from '../db/pool.js';
 
 const gameController = {
+  // Create a new game
   createGame: async (req, res) => {
     const client = await pool.connect();
     try {
@@ -16,6 +17,7 @@ const gameController = {
     }
   },
 
+  // Get all games
   getAllGames: async (req, res) => {
     const client = await pool.connect();
     try {
@@ -38,6 +40,7 @@ const gameController = {
     }
   },
 
+  // Get a game by ID
   getGameById: async (req, res) => {
     const client = await pool.connect();
     try {
@@ -65,6 +68,7 @@ const gameController = {
     }
   },
 
+  // Update a game
   updateGame: async (req, res) => {
     const client = await pool.connect();
     try {
@@ -100,6 +104,7 @@ const gameController = {
     }
   },
 
+  // Delete a game
   deleteGame: async (req, res) => {
     const client = await pool.connect();
     try {
@@ -112,6 +117,38 @@ const gameController = {
       res.json({ message: 'Game deleted' });
     } catch (error) {
       console.error('Error deleting game:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      client.release();
+    }
+  },
+
+  // **New Dynamic Standings Function**
+  getDynamicStandings: async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT 
+          t.id AS team_id, 
+          t.name AS team_name,
+          COUNT(CASE WHEN g.home_team_id = t.id AND g.home_team_points > g.away_team_points THEN 1 ELSE NULL END) +
+          COUNT(CASE WHEN g.away_team_id = t.id AND g.away_team_points > g.home_team_points THEN 1 ELSE NULL END) AS wins,
+          COUNT(CASE WHEN g.home_team_id = t.id AND g.home_team_points < g.away_team_points THEN 1 ELSE NULL END) +
+          COUNT(CASE WHEN g.away_team_id = t.id AND g.away_team_points < g.home_team_points THEN 1 ELSE NULL END) AS losses,
+          SUM(CASE WHEN g.home_team_id = t.id THEN g.home_team_points ELSE g.away_team_points END) AS points_for,
+          SUM(CASE WHEN g.home_team_id = t.id THEN g.away_team_points ELSE g.home_team_points END) AS points_against,
+          (COUNT(CASE WHEN g.home_team_id = t.id AND g.home_team_points > g.away_team_points THEN 1 ELSE NULL END) +
+          COUNT(CASE WHEN g.away_team_id = t.id AND g.away_team_points > g.home_team_points THEN 1 ELSE NULL END))::float / COUNT(g.id) AS pct
+        FROM teams t
+        LEFT JOIN games g ON (t.id = g.home_team_id OR t.id = g.away_team_id)
+        GROUP BY t.id
+        ORDER BY pct DESC;
+      `;
+
+      const result = await client.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching standings:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     } finally {
       client.release();
